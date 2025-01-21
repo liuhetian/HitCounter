@@ -1,14 +1,23 @@
-from datetime import date
+from datetime import date, datetime
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
-from sqlmodel import Session, select
-from database import engine, create_db_and_tables
-from models import Visit
+from sqlmodel import Session, select, create_engine, SQLModel, Field
 from fastapi.middleware.cors import CORSMiddleware
+
+
+class Visit(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    path: str
+    visit_time: datetime = Field(default_factory=datetime.now)
+    visit_date: date = Field(default_factory=date.today, index=True)
+
+sqlite_url = f"sqlite:///../volume/dbs/database.db"
+engine = create_engine(sqlite_url)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    create_db_and_tables()
+    SQLModel.metadata.create_all(engine)
     yield
 
 app = FastAPI(lifespan=lifespan)
